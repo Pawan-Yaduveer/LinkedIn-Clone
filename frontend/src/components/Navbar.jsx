@@ -21,6 +21,12 @@ export default function Navbar({ user, onLogout }) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // Restore original behavior: hide navbar entirely on auth pages (robust to trailing slashes)
+  const onAuthPage = location.pathname.startsWith('/login') || location.pathname.startsWith('/signup');
+  if (!user && onAuthPage) {
+    return null;
+  }
+
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -59,12 +65,7 @@ export default function Navbar({ user, onLogout }) {
               <span style={{marginLeft:6}}>Logout</span>
             </button>
           </>
-        ) : (
-          <div style={{display:'flex', gap:12}}>
-            <NavLink to="/login" className={({isActive})=>"nav-link" + (isActive?" active":"")}>Login</NavLink>
-            <NavLink to="/signup" className={({isActive})=>"nav-link" + (isActive?" active":"")}>Signup</NavLink>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {user && isMobile && menuOpen && (

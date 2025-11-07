@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getProfile, updateProfile, connectUser, disconnectUser, deleteUser, setTokenHeader } from '../api'
+import { refreshCurrentUser } from '../utils/user'
 import { useNavigate } from 'react-router-dom'
 import PostItem from './PostItem'
 
-export default function Profile({ currentUser, match }){
+export default function Profile({ currentUser }){
   const params = useParams();
   const userId = params?.id || currentUser?.id;
   const [profile, setProfile] = useState(null);
@@ -43,12 +44,7 @@ export default function Profile({ currentUser, match }){
       await connectUser(profile._id);
       // refresh profile and current user
       await load();
-      const meId = currentUser?.id || currentUser?._id;
-      if(meId){
-        const rsp = await getProfile(meId);
-        localStorage.setItem('user', JSON.stringify(rsp.data.user));
-        window.dispatchEvent(new CustomEvent('profileUpdated', { detail: rsp.data.user }));
-      }
+      await refreshCurrentUser(currentUser);
     }catch(err){ console.error(err); }
     setConnecting(false);
   }
@@ -59,12 +55,7 @@ export default function Profile({ currentUser, match }){
     try{
       await disconnectUser(profile._id);
       await load();
-      const meId = currentUser?.id || currentUser?._id;
-      if(meId){
-        const rsp = await getProfile(meId);
-        localStorage.setItem('user', JSON.stringify(rsp.data.user));
-        window.dispatchEvent(new CustomEvent('profileUpdated', { detail: rsp.data.user }));
-      }
+      await refreshCurrentUser(currentUser);
     }catch(err){ console.error(err); }
     setConnecting(false);
   }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { getUsers, connectUser, getProfile } from '../api'
+import { getUsers, connectUser } from '../api'
+import { refreshCurrentUser } from '../utils/user'
 import { Link } from 'react-router-dom'
 
 export default function RightSidebar({ currentUser }){
@@ -26,15 +27,7 @@ export default function RightSidebar({ currentUser }){
       setConnecting(c => ({ ...c, [id]: true }));
       await connectUser(id);
       // refresh current user's profile from server for full consistency
-      try{
-        const meId = currentUser?.id || currentUser?._id;
-        if(meId){
-          const rsp = await getProfile(meId);
-          const me = rsp.data.user;
-          localStorage.setItem('user', JSON.stringify(me));
-          window.dispatchEvent(new CustomEvent('profileUpdated', { detail: me }));
-        }
-      }catch(e){ console.error('failed to refresh profile', e); }
+      await refreshCurrentUser(currentUser);
       // remove connected user from suggestions list
       setUsers(prev => prev.filter(u => u._id !== id));
     }catch(err){

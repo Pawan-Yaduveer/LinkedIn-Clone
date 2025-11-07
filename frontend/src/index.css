@@ -1,6 +1,18 @@
 /* Reset & base */
 * { box-sizing: border-box; }
 body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; background:#f3f2ef; color:#222; }
+/* CSS Variables */
+:root {
+	--color-bg:#f3f2ef;
+	--color-surface:#ffffff;
+	--color-border:#e6e6e6;
+	--color-primary:#0a66c2;
+	--color-primary-hover:#0b5bb0;
+	--color-danger:#e11d48;
+	--color-danger-hover:#be123c;
+	--color-text:#222;
+	--color-muted:#666;
+}
 .app { max-width:1200px; margin:0 auto; }
 
 /* Top bar */
@@ -48,17 +60,22 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 
 /* Auth pages (login/signup) centered */
 .auth-page {
-	min-height: calc(100vh - 64px); /* account for topbar */
-	padding: 24px;
-	background: var(--bg);
-	flex-direction: column; /* stack brand above card */
-	gap: 14px;
+	min-height: 100vh;
+	padding: 40px 24px;
+	display:flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	background: linear-gradient(180deg, #f7fafc 0%, #ffffff 100%);
 }
 .auth-card {
 	width: 420px;
 	max-width: calc(100% - 48px);
 	box-shadow: 0 6px 18px rgba(20,20,20,0.08);
 	border-radius: 8px;
+	background:#fff;
+	padding:28px 32px;
 }
 
 .auth-brand { width:100%; text-align:center; }
@@ -68,7 +85,7 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 	color:#fff;
 	text-decoration:none;
 	display:inline-block;
-	padding:8px 14px;
+	padding:10px 18px;
 	background: #0a66c2; /* same as primary button */
 	border-radius:8px;
 	box-shadow: 0 4px 14px rgba(10,102,194,0.18);
@@ -95,15 +112,16 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 /* Forms */
 .form-row { margin-bottom:8px; }
 input, textarea { width:100%; padding:10px; border:1px solid #e1e1e1; border-radius:6px; }
-.btn { padding:8px 12px; border:none; background:#0a66c2; color:#fff; border-radius:6px; cursor:pointer; }
-.btn:hover { background:#0b5bb0; }
+.btn { padding:8px 12px; border:none; background:var(--color-primary); color:#fff; border-radius:6px; cursor:pointer; transition:background .15s, box-shadow .15s; }
+.btn:hover { background:var(--color-primary-hover); }
+.btn:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; box-shadow:0 0 0 2px rgba(10,102,194,0.35); }
 .btn.sm { padding:6px 10px; font-size:14px; }
 .btn.xs { padding:4px 8px; font-size:13px; }
-.btn.secondary { background:#eef3f8; color:#0a66c2; }
+.btn.secondary { background:#eef3f8; color:var(--color-primary); }
 .btn.secondary:hover { background:#e1ebf6; }
-.btn.danger { background:#e11d48; }
-.btn.danger:hover { background:#be123c; }
-.btn.outline { background:#fff; color:#0a66c2; border:1px solid #cfe0f5; }
+.btn.danger { background:var(--color-danger); }
+.btn.danger:hover { background:var(--color-danger-hover); }
+.btn.outline { background:#fff; color:var(--color-primary); border:1px solid #cfe0f5; }
 .btn.outline:hover { background:#f5f9ff; }
 
 /* Like-style button variant */

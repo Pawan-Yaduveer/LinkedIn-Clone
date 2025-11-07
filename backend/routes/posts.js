@@ -94,22 +94,33 @@ router.post('/:id/comments', auth, async (req, res) => {
 // Delete comment 
 router.delete('/:id/comments/:commentId', auth, async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const { id, commentId } = req.params;
+
+    // Load post and locate target comment for auth check
+    const post = await Post.findById(id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
 
-    const comment = post.comments.id(req.params.commentId);
+    const comment = post.comments.id(commentId);
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
-    if (comment.user.toString() !== req.user.id && post.user.toString() !== req.user.id) {
+    // Authorization: author of comment or owner of post can delete
+    const requester = req.user.id;
+    if (comment.user.toString() !== requester && post.user.toString() !== requester) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    comment.remove();
-    await post.save();
-    res.json({ message: 'Comment removed' });
+    // Atomic removal using $pull avoids subdocument instance method issues
+    await Post.updateOne(
+      { _id: id },
+      { $pull: { comments: { _id: commentId } } }
+    );
+
+    // Fetch minimal updated post data for client convenience
+    const updated = await Post.findById(id).select('comments likes image user');
+    return res.json({ message: 'Comment removed', post: updated });
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
+    console.error('Delete comment error:', err);
+    return res.status(500).json({ message: 'Server error deleting comment' });
   }
 });
 

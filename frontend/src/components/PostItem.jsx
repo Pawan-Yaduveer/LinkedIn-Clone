@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { likePost, deletePost, addComment, deleteComment, editPost } from '../api'
+import { renderFormattedText } from '../utils/format'
 
 export default function PostItem({ post, onRefresh, currentUser }){
   const [commentText, setCommentText] = useState('');
@@ -54,10 +55,24 @@ export default function PostItem({ post, onRefresh, currentUser }){
     }
   }, [showCommentInput]);
 
+  const [confirmCommentDelete, setConfirmCommentDelete] = useState(null);
   async function removeComment(commentId){
-    if (!window.confirm('Delete this comment?')) return;
-    await deleteComment(post._id, commentId);
-    onRefresh();
+    // Defensive: ensure we have an id
+    if (!commentId) return alert('Missing comment id');
+    try {
+      setConfirmCommentDelete(null);
+      const resp = await deleteComment(post._id, commentId);
+      // If API returned updated post, patch local post.comments quickly without full refresh
+      if (resp?.data?.post?.comments) {
+        post.comments = resp.data.post.comments; // mutate local reference (component gets new props on parent refresh)
+      }
+      onRefresh();
+    } catch (e) {
+      console.error('Failed to delete comment', e);
+      setConfirmCommentDelete(commentId);
+      const msg = e?.response?.data?.message || 'Could not delete comment. Please try again.';
+      alert(msg);
+    }
   }
 
   async function saveEdit(){
@@ -83,29 +98,6 @@ export default function PostItem({ post, onRefresh, currentUser }){
     onRefresh();
   }
 
-  // render post/comment text with paragraphs and hashtag highlighting
-  function renderFormattedText(text){
-    if (!text) return null;
-    // split into paragraphs by one or more newlines
-    const paragraphs = text.split(/\n+/);
-    return paragraphs.map((p, idx) => {
-      // split by hashtags (keep the #token)
-      const parts = p.split(/(#\w[\w-]*)/g);
-      return (
-        <p key={idx} style={{margin: '6px 0'}}>
-          {parts.map((part, i) => {
-            if (!part) return null;
-            if (part.startsWith('#')){
-              // render hashtag as styled span (could be a Link)
-              const tag = part.slice(1);
-              return <span key={i} className="hashtag">#{tag}</span>
-            }
-            return <span key={i}>{part}</span>
-          })}
-        </p>
-      )
-    })
-  }
 
   return (
     <div className="card">
@@ -191,8 +183,17 @@ export default function PostItem({ post, onRefresh, currentUser }){
                   <div className="small">{new Date(c.createdAt).toLocaleString()}</div>
                 </div>
                 {(userId && (c.user === userId || post.user === userId)) && (
-                  <div>
-                    <button onClick={()=>removeComment(c._id || c.id)}>Delete</button>
+                  <div style={{position:'relative'}}>
+                    <button className="btn danger xs" onClick={()=>setConfirmCommentDelete(c._id || c.id)}>Delete</button>
+                    {confirmCommentDelete === (c._id || c.id) && (
+                      <div className="confirm-pop" onMouseLeave={()=>setConfirmCommentDelete(null)}>
+                        <h5>Delete this comment?</h5>
+                        <div className="confirm-actions">
+                          <button className="btn secondary xs" onClick={()=>setConfirmCommentDelete(null)}>Cancel</button>
+                          <button className="btn danger xs" onClick={()=>removeComment(c._id || c.id)}>Delete</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
