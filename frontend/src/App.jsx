@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Navbar from './components/Navbar'
 import Login from './components/Login'
 import Signup from './components/Signup'
 import Feed from './components/Feed'
@@ -7,55 +8,12 @@ import Profile from './components/Profile'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import { setTokenHeader } from './api'
+// Simple placeholder pages for top nav so active states behave consistently
+function Network(){ return <div className="card"><h3>My Network</h3><p>Connections and invitations will appear here.</p></div>; }
+function Jobs(){ return <div className="card"><h3>Jobs</h3><p>Job recommendations and applications will appear here.</p></div>; }
+function Messages(){ return <div className="card"><h3>Messages</h3><p>Your conversations will appear here.</p></div>; }
 
-function TopBar({ user, onLogout }){
-  const location = useLocation();
-
-  // hide full navbar on auth pages (login/signup)
-  if(location.pathname === '/login' || location.pathname === '/signup') return null;
-
-  return (
-    <header className="topbar">
-      <div className="topbar-left">
-        <h1 className="brand"><Link to="/">LinkedIn Clone</Link></h1>
-        <div className="search">
-          <input placeholder="Search" />
-        </div>
-      </div>
-
-      {user && (
-        <div className="topbar-center">
-          <nav>
-            <Link to="/" className="nav-link">Home</Link>
-            <Link to="/" className="nav-link">My Network</Link>
-            <Link to="/" className="nav-link">Jobs</Link>
-            <Link to="/" className="nav-link">Messages</Link>
-          </nav>
-        </div>
-      )}
-
-      <div className="topbar-right">
-        {user ? (
-          <>
-            <Link to={`/profile/${user.id || user._id}`} className="profile-link">
-              {user.avatar ? <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${user.avatar}`} alt="avatar" className="avatar" /> : <div className="avatar placeholder" />}
-              <span className="username">{user.name}</span>
-            </Link>
-            <button className="btn logout icon sm" onClick={onLogout} aria-label="Logout" title="Logout">
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 21H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h3" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
-              <span style={{marginLeft:6}}>Logout</span>
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="nav-link">Login</Link>
-            <Link to="/signup" className="nav-link">Signup</Link>
-          </>
-        )}
-      </div>
-    </header>
-  )
-}
+// Navbar component extracted to components/Navbar.jsx
 
 export default function App(){
   const [user, setUser] = useState(() => {
@@ -90,7 +48,7 @@ export default function App(){
   return (
     <BrowserRouter>
       <div className="app">
-        {user && <TopBar user={user} onLogout={handleLogout} />}
+        <Navbar user={user} onLogout={handleLogout} />
         <main>
           {user ? (
             <div className="layout">
@@ -98,6 +56,9 @@ export default function App(){
               <section className="center">
                 <Routes>
                   <Route path="/" element={<Feed currentUser={user} />} />
+                  <Route path="/network" element={<Network />} />
+                  <Route path="/jobs" element={<Jobs />} />
+                  <Route path="/messages" element={<Messages />} />
                   <Route path="/profile/:id" element={<Profile currentUser={user} />} />
                 </Routes>
               </section>

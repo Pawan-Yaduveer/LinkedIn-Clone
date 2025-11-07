@@ -30,8 +30,8 @@ API overview (selected endpoints)
 - `PUT /api/users/:id` — update profile (authenticated owner, supports avatar upload)
 - `DELETE /api/users/:id` — delete account (authenticated owner, removes posts and avatar)
 
-Uploads
-- During development uploaded files are saved to `backend/uploads` and served statically at `/uploads`.
+File storage
+- Images (avatars and post images) are stored in MongoDB GridFS and streamed via `GET /api/files/:id`.
 
 Notes & recommendations
 - This code is intended for learning. For production you'd want to:

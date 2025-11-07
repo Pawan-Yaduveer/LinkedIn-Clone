@@ -6,7 +6,6 @@ const authRoutes = require('./routes/auth');
 const postsRoutes = require('./routes/posts');
 const usersRoutes = require('./routes/users');
 const filesRoutes = require('./routes/files');
-const path = require('path');
 
 dotenv.config();
 
@@ -15,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Note: Legacy local uploads have been replaced by MongoDB GridFS streamed via /api/files
 
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postsRoutes);

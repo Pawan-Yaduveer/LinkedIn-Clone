@@ -3,8 +3,7 @@
 body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; background:#f3f2ef; color:#222; }
 .app { max-width:1200px; margin:0 auto; }
 
-/* Top bar (LinkedIn blue) */
-.topbar { display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#ffffff; border-bottom:1px solid #e6e6e6; position:sticky; top:0; z-index:40; }
+/* Top bar */
 .topbar { display:flex; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-bottom:1px solid #e6e6e6; position:sticky; top:0; z-index:40; box-shadow:0 1px 3px rgba(16,24,40,0.04); }
 .topbar-left { display:flex; align-items:center; gap:14px; }
 .brand { margin:0; font-size:18px; color:#0a66c2; }
@@ -16,6 +15,7 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 .topbar-center nav { display:flex; gap:18px; }
 .nav-link { color:#475569; text-decoration:none; padding:6px 10px; border-radius:6px; }
 .nav-link:hover { background:#f1f5f9; color:#0a66c2; }
+.nav-link.active { color:#0a66c2; font-weight:600; border-bottom:2px solid #0a66c2; }
 
 .topbar-right { display:flex; align-items:center; gap:12px; }
 .profile-link { display:flex; align-items:center; gap:8px; color:#1f2937; text-decoration:none; }
@@ -24,8 +24,11 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 .avatar.placeholder { width:36px; height:36px; border-radius:50%; background:#e2e8f0; }
 .avatar-lg { width:88px; height:88px; border-radius:50%; object-fit:cover; border:1px solid #e6e6e6; }
 .avatar-lg.placeholder { width:88px; height:88px; border-radius:50%; background:#e2e8f0; }
-.logout { background:transparent; border:1px solid #e6e6e6; padding:6px 10px; border-radius:8px; cursor:pointer; }
-.logout:hover { background:#f8fafc; }
+/* removed legacy .logout button style; use .btn variants */
+
+/* Mobile menu toggle (hidden on desktop) */
+.menu-btn { display:none; }
+.mobile-menu { display:none; }
 
 /* Remove underline for links in sidebars and topbar */
 .profile-card a, .topbar nav a, .layout a { text-decoration: none; }
@@ -44,7 +47,6 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 .info { padding:20px; text-align:center; }
 
 /* Auth pages (login/signup) centered */
-.auth-page { display:flex; align-items:center; justify-content:center; min-height: calc(100vh - 72px); padding:20px; background: linear-gradient(180deg, #f7fafc 0%, #ffffff 100%); }
 .auth-page {
 	min-height: calc(100vh - 64px); /* account for topbar */
 	padding: 24px;
@@ -52,7 +54,6 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 	flex-direction: column; /* stack brand above card */
 	gap: 14px;
 }
-.auth-card { width:100%; max-width:480px; padding:28px; border-radius:10px; box-shadow:0 6px 18px rgba(15,23,42,0.08); }
 .auth-card {
 	width: 420px;
 	max-width: calc(100% - 48px);
@@ -75,7 +76,6 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 }
 .auth-brand .brand:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(10,102,194,0.18); }
 .auth-card h2 { margin-top:0; }
-.auth-cta { margin-top:14px; text-align:center; }
 .auth-cta {
 	margin-top: 14px;
 	text-align: center;
@@ -148,8 +148,24 @@ input, textarea { width:100%; padding:10px; border:1px solid #e1e1e1; border-rad
 .hashtag:hover { text-decoration: underline; }
 
 /* Responsive */
+@media (max-width: 1200px) {
+	.layout { grid-template-columns:220px 1fr 280px; gap:16px; padding:16px; }
+	.search input { width:180px; }
+}
+
 @media (max-width: 960px) {
-	.layout { grid-template-columns:1fr; padding:12px; }
-	.left, .right { display:none; }
+	.layout { grid-template-columns:1fr; padding:12px; gap:12px; }
+	.left, .right { display:block; }
 	.app { padding-bottom:60px; }
+	.topbar-center { display:none; }
+	.menu-btn { display:inline-flex; }
+	.search input { width:140px; }
+	/* Mobile dropdown menu */
+	.mobile-menu { position:absolute; right:12px; top:56px; background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:10px; box-shadow:0 8px 18px rgba(0,0,0,0.08); display:flex; flex-direction:column; gap:8px; min-width:200px; z-index:50; }
+	.mobile-menu a, .mobile-menu button { text-align:left; }
+}
+
+/* Only show tooltips on hover-capable devices */
+@media (hover: none) {
+	[data-tip]::after, [data-tip]::before { display:none !important; }
 }
