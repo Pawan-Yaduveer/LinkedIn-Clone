@@ -8,6 +8,8 @@ export default function PostItem({ post, onRefresh, currentUser }){
   const commentInputRef = useRef(null);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.text);
+  const [editImageFile, setEditImageFile] = useState(null);
+  const [removeImage, setRemoveImage] = useState(false);
 
   const userId = currentUser?.id || currentUser?._id;
   const liked = post.likes?.includes(userId) || false;
@@ -36,9 +38,25 @@ export default function PostItem({ post, onRefresh, currentUser }){
   }
 
   async function saveEdit(){
-    if (editText.trim() === post.text) { setEditing(false); return; }
-    await editPost(post._id, { text: editText });
+    const textChanged = (editText.trim() !== (post.text || ''));
+    const wantsRemoval = removeImage && !!post.image;
+    const wantsNewFile = !!editImageFile;
+
+    if (!textChanged && !wantsRemoval && !wantsNewFile) { setEditing(false); return; }
+
+    if (wantsRemoval || wantsNewFile) {
+      const fd = new FormData();
+      fd.append('text', editText);
+      if (wantsRemoval) fd.append('removeImage', 'true');
+      if (wantsNewFile) fd.append('image', editImageFile);
+      await editPost(post._id, fd);
+    } else {
+      await editPost(post._id, { text: editText });
+    }
+
     setEditing(false);
+    setEditImageFile(null);
+    setRemoveImage(false);
     onRefresh();
   }
 
@@ -91,6 +109,15 @@ export default function PostItem({ post, onRefresh, currentUser }){
               onChange={e=>{ setEditText(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }}
               style={{width:'100%'}}
             />
+            <div style={{marginTop:8, display:'flex', gap:12, alignItems:'center'}}>
+              <input type="file" accept="image/*" onChange={e=>{ setEditImageFile(e.target.files?.[0] || null); if (e.target.files?.[0]) setRemoveImage(false); }} />
+              {post.image && (
+                <label style={{display:'inline-flex', alignItems:'center', gap:6}}>
+                  <input type="checkbox" checked={removeImage} onChange={e=>{ setRemoveImage(e.target.checked); if (e.target.checked) setEditImageFile(null); }} />
+                  Remove current image
+                </label>
+              )}
+            </div>
             <div style={{marginTop:8}}>
               <button onClick={saveEdit} className="btn">Save</button>
               <button onClick={()=>setEditing(false)} style={{marginLeft:8}}>Cancel</button>
@@ -101,7 +128,9 @@ export default function PostItem({ post, onRefresh, currentUser }){
         )}
       </div>
 
-      {post.image && <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${post.image}`} className="post-image" alt="post" />}
+      {post.image && !editing && (
+        <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${post.image}`} className="post-image" alt="post" />
+      )}
 
       <div style={{marginTop:8, display:'flex', gap:12, alignItems:'center'}}>
         <button onClick={toggleLike} className="btn" style={{background: liked ? '#0a66c2' : '#eef3f8', color: liked ? '#fff' : '#0a66c2', padding:'6px 10px', borderRadius:6}}>

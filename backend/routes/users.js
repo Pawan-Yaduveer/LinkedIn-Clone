@@ -28,7 +28,9 @@ router.get('/', auth, async (req, res) => {
     const myConnIds = (me.connections || []).map(c => c.toString());
 
     // find users who are not me and not already connected
-    const candidates = await User.find({ _id: { $ne: req.user.id, $nin: myConnIds } }).select('name email avatar bio connections');
+  // Exclude self and already connected users in a single $nin array for clarity
+  const excludeIds = [req.user.id, ...myConnIds];
+  const candidates = await User.find({ _id: { $nin: excludeIds } }).select('name email avatar bio connections');
 
     const myConnSet = new Set(myConnIds);
     const users = candidates.map(u => {

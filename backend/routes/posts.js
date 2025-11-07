@@ -114,13 +114,47 @@ router.delete('/:id/comments/:commentId', auth, async (req, res) => {
 });
 
 // Edit post
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
     if (post.user.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    post.text = req.body.text ?? post.text;
+    // Update text if provided
+    if (typeof req.body.text === 'string') {
+      post.text = req.body.text;
+    }
+
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+
+    // Handle image removal if requested
+    const removeImage = (req.body.removeImage === 'true' || req.body.removeImage === true);
+    if (removeImage && post.image && post.image.startsWith('/api/files/')) {
+      try {
+        const oldIdStr = post.image.split('/api/files/')[1];
+        await bucket.delete(new mongoose.Types.ObjectId(oldIdStr));
+      } catch (e) { console.warn('Failed to remove old post image (removeImage):', e.message); }
+      post.image = undefined;
+    }
+
+    // Handle new image upload (replace if existing)
+    if (req.file && req.file.buffer) {
+      // delete old image first if exists
+      if (post.image && post.image.startsWith('/api/files/')) {
+        try {
+          const oldIdStr = post.image.split('/api/files/')[1];
+          await bucket.delete(new mongoose.Types.ObjectId(oldIdStr));
+        } catch (e) { console.warn('Failed to remove old post image (replace):', e.message); }
+      }
+      const filename = `${Date.now()}_${req.file.originalname}`;
+      const uploadStream = bucket.openUploadStream(filename, { contentType: req.file.mimetype });
+      await new Promise((resolve, reject) => {
+        uploadStream.end(req.file.buffer, (err) => err ? reject(err) : resolve());
+      });
+      const fileId = uploadStream.id;
+      post.image = `/api/files/${fileId.toString()}`;
+    }
+
     await post.save();
     res.json(post);
   } catch (err) {
