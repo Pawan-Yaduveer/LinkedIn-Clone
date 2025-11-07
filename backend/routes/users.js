@@ -4,18 +4,8 @@ const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Post = require('../models/Post');
 const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: function (req, file, cb) {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, unique + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
+const mongoose = require('mongoose');
 
 // Get public profile and user's posts
 router.get('/:id', async (req, res) => {
@@ -125,7 +115,27 @@ router.put('/:id', auth, upload.single('avatar'), async (req, res) => {
 
     if (req.body.name) user.name = req.body.name;
     if (req.body.bio) user.bio = req.body.bio;
-    if (req.file) user.avatar = `/uploads/${req.file.filename}`;
+    if (req.file && req.file.buffer) {
+      // Optional: delete previous avatar if it was a GridFS file
+      try {
+        if (user.avatar && user.avatar.startsWith('/api/files/')) {
+          const oldIdStr = user.avatar.split('/api/files/')[1];
+          const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+          await bucket.delete(new mongoose.Types.ObjectId(oldIdStr));
+        }
+      } catch (e) {
+        console.warn('Failed to remove previous avatar from GridFS:', e.message);
+      }
+
+      const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+      const filename = `${Date.now()}_${req.file.originalname}`;
+      const uploadStream = bucket.openUploadStream(filename, { contentType: req.file.mimetype });
+      await new Promise((resolve, reject) => {
+        uploadStream.end(req.file.buffer, (err) => err ? reject(err) : resolve());
+      });
+      const fileId = uploadStream.id;
+      user.avatar = `/api/files/${fileId.toString()}`;
+    }
 
     await user.save();
     res.json({ user: { id: user._id, name: user.name, email: user.email, bio: user.bio, avatar: user.avatar } });
@@ -143,20 +153,29 @@ router.delete('/:id', auth, async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // delete all posts by this user
+    // delete all posts by this user (and try to delete their GridFS images)
+    const posts = await Post.find({ user: req.params.id });
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+    for (const p of posts) {
+      try {
+        if (p.image && p.image.startsWith('/api/files/')) {
+          const fileIdStr = p.image.split('/api/files/')[1];
+          await bucket.delete(new mongoose.Types.ObjectId(fileIdStr));
+        }
+      } catch (e) { console.warn('Failed to remove post image from GridFS:', e.message); }
+    }
     await Post.deleteMany({ user: req.params.id });
 
     // remove this user from other users' connections
     await User.updateMany({ connections: req.params.id }, { $pull: { connections: req.params.id } });
 
-    // delete avatar file if present
+    // delete avatar from GridFS if present
     try{
-      if (user.avatar) {
-        const fs = require('fs');
-        const avatarPath = path.join(__dirname, '..', user.avatar.replace(/^\//, ''));
-        if (fs.existsSync(avatarPath)) fs.unlinkSync(avatarPath);
+      if (user.avatar && user.avatar.startsWith('/api/files/')) {
+        const fileIdStr = user.avatar.split('/api/files/')[1];
+        await bucket.delete(new mongoose.Types.ObjectId(fileIdStr));
       }
-    }catch(e){ console.warn('Failed to remove avatar file', e); }
+    }catch(e){ console.warn('Failed to remove avatar from GridFS', e); }
 
     // finally delete the user
     await User.findByIdAndDelete(req.params.id);

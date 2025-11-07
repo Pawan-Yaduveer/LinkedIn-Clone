@@ -1,4 +1,3 @@
-@"
 # Node and environment
 node_modules/
 .env
@@ -6,13 +5,14 @@ node_modules/
 .env.*.local
 *.log
 
-# Build / dev
+# Build / dev output
 dist/
+
+# Transient upload artifacts (no longer used after GridFS)
 uploads/
 
-# Editor
+# Editor / OS noise
 .vscode/
 *.swp
 Thumbs.db
 .DS_Store
-"@ > .gitignore

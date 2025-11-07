@@ -4,18 +4,8 @@ const auth = require('../middleware/auth');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: function (req, file, cb) {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, unique + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
+const mongoose = require('mongoose');
 
 // Create post
 router.post('/', auth, upload.single('image'), async (req, res) => {
@@ -23,11 +13,25 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(400).json({ message: 'User not found' });
 
+    let imageUrl;
+    if (req.file && req.file.buffer) {
+      // store in MongoDB GridFS and capture the file id
+      const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+      const filename = `${Date.now()}_${req.file.originalname}`;
+      const uploadStream = bucket.openUploadStream(filename, { contentType: req.file.mimetype });
+
+      await new Promise((resolve, reject) => {
+        uploadStream.end(req.file.buffer, (err) => err ? reject(err) : resolve());
+      });
+      const fileId = uploadStream.id;
+      imageUrl = `/api/files/${fileId.toString()}`;
+    }
+
     const newPost = new Post({
       user: user._id,
       name: user.name,
       text: req.body.text || '',
-      image: req.file ? `/uploads/${req.file.filename}` : undefined
+      image: imageUrl
     });
 
     const post = await newPost.save();
@@ -131,6 +135,19 @@ router.delete('/:id', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
     if (post.user.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
+
+    // if post had an image in GridFS, delete it
+    try {
+      if (post.image && post.image.startsWith('/api/files/')) {
+        const fileIdStr = post.image.split('/api/files/')[1];
+        if (fileIdStr) {
+          const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+          await bucket.delete(new mongoose.Types.ObjectId(fileIdStr));
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to remove GridFS image for post:', e.message);
+    }
 
     await post.deleteOne();
     res.json({ message: 'Post removed' });
