@@ -22,6 +22,8 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 .profile-link:hover .username { text-decoration:underline; }
 .avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #e6e6e6; }
 .avatar.placeholder { width:36px; height:36px; border-radius:50%; background:#e2e8f0; }
+.avatar-lg { width:88px; height:88px; border-radius:50%; object-fit:cover; border:1px solid #e6e6e6; }
+.avatar-lg.placeholder { width:88px; height:88px; border-radius:50%; background:#e2e8f0; }
 .logout { background:transparent; border:1px solid #e6e6e6; padding:6px 10px; border-radius:8px; cursor:pointer; }
 .logout:hover { background:#f8fafc; }
 
@@ -94,6 +96,46 @@ body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; margin:0; b
 .form-row { margin-bottom:8px; }
 input, textarea { width:100%; padding:10px; border:1px solid #e1e1e1; border-radius:6px; }
 .btn { padding:8px 12px; border:none; background:#0a66c2; color:#fff; border-radius:6px; cursor:pointer; }
+.btn:hover { background:#0b5bb0; }
+.btn.sm { padding:6px 10px; font-size:14px; }
+.btn.xs { padding:4px 8px; font-size:13px; }
+.btn.secondary { background:#eef3f8; color:#0a66c2; }
+.btn.secondary:hover { background:#e1ebf6; }
+.btn.danger { background:#e11d48; }
+.btn.danger:hover { background:#be123c; }
+.btn.outline { background:#fff; color:#0a66c2; border:1px solid #cfe0f5; }
+.btn.outline:hover { background:#f5f9ff; }
+
+/* Like-style button variant */
+.btn.like { background:#eef3f8; color:#0a66c2; }
+.btn.like.active { background:#0a66c2; color:#fff; }
+
+/* Icon buttons spacing */
+.btn.icon { display:inline-flex; align-items:center; gap:6px; }
+.btn.icon svg { width:16px; height:16px; display:block; }
+
+/* Tooltip utility using data-tip */
+[data-tip] { position:relative; }
+[data-tip]:hover::after, [data-tip]:focus::after { content: attr(data-tip); position:absolute; top:-34px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; font-size:12px; padding:4px 8px; border-radius:6px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.15); z-index:60; }
+[data-tip]:hover::before, [data-tip]:focus::before { content:""; position:absolute; top:-10px; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:#111827; }
+
+/* Delete confirmation popover */
+.confirm-pop { position:absolute; top:32px; right:0; background:#fff; border:1px solid #e6e6e6; padding:10px 12px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.08); width:180px; z-index:70; }
+.confirm-pop h5 { margin:0 0 8px; font-size:13px; font-weight:600; color:#0f172a; }
+.confirm-actions { display:flex; justify-content:flex-end; gap:8px; }
+
+/* Style native file inputs to look like buttons */
+.file-btn {
+	display:inline-block;
+	padding:8px 12px;
+	border-radius:6px;
+	background:#eef3f8;
+	color:#0a66c2;
+	cursor:pointer;
+	border:1px dashed #cfe0f5;
+}
+.file-btn:hover { background:#e1ebf6; }
+.file-input { display:none; }
 
 /* Buttons used in posts */
 .post-actions button { border:0; background:transparent; cursor:pointer; padding:6px 8px; border-radius:6px; }

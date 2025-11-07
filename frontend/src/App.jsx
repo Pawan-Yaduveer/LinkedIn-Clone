@@ -41,7 +41,10 @@ function TopBar({ user, onLogout }){
               {user.avatar ? <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${user.avatar}`} alt="avatar" className="avatar" /> : <div className="avatar placeholder" />}
               <span className="username">{user.name}</span>
             </Link>
-            <button className="btn logout" onClick={onLogout}>Logout</button>
+            <button className="btn logout icon sm" onClick={onLogout} aria-label="Logout" title="Logout">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 21H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h3" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+              <span style={{marginLeft:6}}>Logout</span>
+            </button>
           </>
         ) : (
           <>
@@ -72,12 +75,15 @@ export default function App(){
   }, []);
 
   function handleLogin({ user, token }){
+    // Set auth header immediately to avoid race where children fetch before useEffect runs
+    try { setTokenHeader(token); } catch {}
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('token', token);
     setUser(user); setToken(token);
   }
   function handleLogout(){
     localStorage.removeItem('user'); localStorage.removeItem('token');
+    try { setTokenHeader(null); } catch {}
     setUser(null); setToken(null);
   }
 
@@ -103,6 +109,8 @@ export default function App(){
                   <Route path="/login" element={<Login onSuccess={handleLogin} />} />
                   <Route path="/signup" element={<Signup onSuccess={handleLogin} />} />
                   <Route path="/" element={<Navigate to="/login" replace />} />
+                  {/* Catch-all to avoid blank screen if user logs out on a protected route */}
+                  <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
             </div>
           )}

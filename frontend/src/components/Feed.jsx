@@ -39,8 +39,13 @@ export default function Feed({ currentUser }){
               onFocus={e=>{ const el = e.target; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }}
             />
           </div>
-          <div className="form-row"><input type="file" onChange={e=>setImage(e.target.files[0])} /></div>
-          <div className="form-row"><button className="btn">Post</button></div>
+          <div className="form-row" style={{display:'flex', gap:10, alignItems:'center'}}>
+            <label className="file-btn">
+              Choose file
+              <input className="file-input" type="file" accept="image/*" onChange={e=>setImage(e.target.files[0])} />
+            </label>
+            <button className="btn">Post</button>
+          </div>
         </form>
       </div>
 

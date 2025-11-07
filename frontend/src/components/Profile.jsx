@@ -13,6 +13,7 @@ export default function Profile({ currentUser, match }){
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   async function load(){
     const res = await getProfile(userId);
@@ -23,6 +24,14 @@ export default function Profile({ currentUser, match }){
   }
 
   useEffect(()=>{ if(userId) load(); }, [userId]);
+
+  // Build preview URL for newly selected avatar when editing
+  useEffect(()=>{
+    if (!avatar) { setAvatarPreview(null); return; }
+    const url = URL.createObjectURL(avatar);
+    setAvatarPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [avatar]);
 
   const isMe = currentUser && ((currentUser.id || currentUser._id) === (profile?._id || profile?.id));
   const [connecting, setConnecting] = useState(false);
@@ -103,7 +112,11 @@ export default function Profile({ currentUser, match }){
     <div>
       <div className="card" style={{display:'flex', gap:12}}>
         <div>
-          {profile.avatar ? <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${profile.avatar}`} alt="avatar" style={{width:80, height:80, borderRadius:40}} /> : <div style={{width:80, height:80, borderRadius:40, background:'#ddd'}} />}
+          {profile.avatar ? (
+            <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${profile.avatar}`} alt="avatar" className="avatar-lg" />
+          ) : (
+            <div className="avatar-lg placeholder" />
+          )}
         </div>
         <div style={{flex:1}}>
           <div style={{display:'flex', justifyContent:'space-between'}}>
@@ -113,13 +126,22 @@ export default function Profile({ currentUser, match }){
             </div>
             <div>
               {isMe ? (
-                <button onClick={()=>setEditing(true)}>Edit profile</button>
+                <button onClick={()=>setEditing(true)} className="btn outline sm icon" aria-label="Edit profile" title="Edit profile">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                  Edit
+                </button>
               ) : (
                 <>
                   {profile.connections && profile.connections.find(c => (currentUser?.id || currentUser?._id) === (c || '').toString()) ? (
-                    <button onClick={handleDisconnect} disabled={connecting}>{connecting ? 'Working...' : 'Disconnect'}</button>
+                    <button onClick={handleDisconnect} disabled={connecting} className="btn secondary sm icon" aria-label="Disconnect" title="Disconnect">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8h6v2H3V8zm12 0h6v2h-6V8z" /><path d="M9 8a3 3 0 0 1 6 0v8a3 3 0 0 1-6 0V8z" /></svg>
+                      {connecting ? 'Working...' : 'Disconnect'}
+                    </button>
                   ) : (
-                    <button onClick={handleConnect} disabled={connecting}>{connecting ? 'Working...' : 'Connect'}</button>
+                    <button onClick={handleConnect} disabled={connecting} className="btn sm icon" aria-label="Connect" title="Connect">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M8 12h8" /><path d="M12 8v8" /><circle cx="12" cy="12" r="9" /></svg>
+                      {connecting ? 'Working...' : 'Connect'}
+                    </button>
                   )}
                 </>
               )}
@@ -133,13 +155,31 @@ export default function Profile({ currentUser, match }){
         <div className="card">
           <h4>Edit profile</h4>
           <form onSubmit={save}>
+            <div className="form-row" style={{display:'flex', gap:12, alignItems:'center'}}>
+              {(avatarPreview || profile.avatar) ? (
+                <img src={avatarPreview || `${(import.meta.env.VITE_API_URL || 'http://localhost:5000')}${profile.avatar}`} alt="avatar preview" className="avatar-lg" />
+              ) : (
+                <div className="avatar-lg placeholder" />
+              )}
+            </div>
             <div className="form-row"><input value={name} onChange={e=>setName(e.target.value)} placeholder="Full name" /></div>
             <div className="form-row"><textarea rows={4} value={bio} onChange={e=>setBio(e.target.value)} /></div>
-            <div className="form-row"><input type="file" onChange={e=>setAvatar(e.target.files[0])} /></div>
+            <div className="form-row" style={{display:'flex', gap:10, alignItems:'center'}}>
+              <label className="file-btn">Choose avatar<input className="file-input" type="file" accept="image/*" onChange={e=>setAvatar(e.target.files[0])} /></label>
+            </div>
             <div className="form-row">
-              <button className="btn">Save</button>
-              <button onClick={()=>setEditing(false)} style={{marginLeft:8}}>Cancel</button>
-              <button onClick={handleDelete} style={{marginLeft:12, background:'#ef4444', border:'none', color:'#fff', padding:'8px 12px', borderRadius:6}}>Delete account</button>
+              <button className="btn sm icon" aria-label="Save profile" title="Save">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12l5 5L20 7" /></svg>
+                Save
+              </button>
+              <button onClick={()=>setEditing(false)} className="btn secondary sm icon" style={{marginLeft:8}} aria-label="Cancel editing" title="Cancel">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
+                Cancel
+              </button>
+              <button onClick={handleDelete} className="btn danger sm icon" style={{marginLeft:12}} aria-label="Delete account" title="Delete account">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
+                Delete
+              </button>
             </div>
           </form>
         </div>

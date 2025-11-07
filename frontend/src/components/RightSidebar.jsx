@@ -7,16 +7,19 @@ export default function RightSidebar({ currentUser }){
   const [connecting, setConnecting] = useState({});
 
   useEffect(()=>{
+    let cancelled = false;
     async function load(){
       try{
         const res = await getUsers();
-        setUsers(res.data || []);
+        if(!cancelled) setUsers(res.data || []);
       }catch(err){
-        console.error('Failed to load users', err);
+        if(!cancelled) console.error('Failed to load users', err);
       }
     }
-    load();
-  }, []);
+    // Delay first fetch just enough to ensure token header is set if login happened this render cycle
+    const t = setTimeout(load, 50);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [currentUser]);
 
   async function handleConnect(id){
     try{
@@ -48,7 +51,7 @@ export default function RightSidebar({ currentUser }){
     <div className="card">
       <h4 style={{margin:0}}>People you may know</h4>
       <div style={{marginTop:10}}>
-        {suggestions.length === 0 && <div className="small">No suggestions</div>}
+        {suggestions.length === 0 && <div className="small">No suggestions yet — invite more users or disconnect someone to see new suggestions.</div>}
         {suggestions.map(u => (
           <div key={u._id} className="suggestion">
             <div className="meta">
